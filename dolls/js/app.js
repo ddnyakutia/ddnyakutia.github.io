@@ -43,13 +43,58 @@
         buildDots();
         bind();
         cur = 0;
-        paint(false);
+        return warmPriorityVideos();
       })
       .catch(function () {
         // even if data failed to load, don't leave the user staring
         // at a spinner forever
       })
-      .then(hidePreloader);
+      .then(function () {
+        paint(false);
+        hidePreloader();
+      });
+  }
+
+  /* Keep the preloader up until the first, second, and last slide's   */
+  /* video actually have data to show — those are the ones a person    */
+  /* can land on immediately (start, one swipe in, or one swipe        */
+  /* "backwards" via the loop). Everything else stays on its light     */
+  /* preload="metadata" and streams in quietly in the background.      */
+
+  function warmPriorityVideos() {
+    var n = dolls.length;
+    if (!n) return Promise.resolve();
+
+    var idxs = [0];
+    if (n > 1) idxs.push(1);
+    if (n > 2) idxs.push(n - 1);
+    idxs = idxs.filter(function (v, i) { return idxs.indexOf(v) === i; });
+
+    var waits = idxs.map(function (idx) {
+      var card = findCard(idx);
+      var video = card && card.querySelector('.card-video');
+      if (!video) return Promise.resolve();
+      video.preload = 'auto';
+      video.load();
+      return waitForVideoReady(video);
+    });
+
+    return Promise.all(waits);
+  }
+
+  function waitForVideoReady(video) {
+    return new Promise(function (resolve) {
+      if (video.readyState >= 2 || video.error) { resolve(); return; }
+      var timer = setTimeout(finish, 12000); // safety net: never block on a slow/broken clip
+      function finish() {
+        video.removeEventListener('loadeddata', finish);
+        video.removeEventListener('error', finish);
+        clearTimeout(timer);
+        resolve();
+      }
+      video.addEventListener('loadeddata', finish);
+      video.addEventListener('error', finish);
+    });
   }
 
   function hidePreloader() {
@@ -87,14 +132,6 @@
       .then(function (r) { return r.json(); })
       .then(function (d) { dolls = d; })
   }
-
-  // function fallbackDolls() {
-  //   var n = ['Алиса', 'Мираж', 'Розалинда', 'Валькирия', 'Селеста', 'Кармен', 'Снежана', 'Лунария', 'Жаклин', 'Флоренс', 'Искра', 'Эбби'];
-  //   var c = ['#c9a87c', '#7c8fc9', '#c97ca8', '#c9c57c', '#7cc9b8', '#c97c7c', '#aed4e6', '#b07cc9', '#d4af37', '#7cc97c', '#c99d7c', '#8a7c9e'];
-  //   return n.map(function (name, i) {
-  //     return { id: i + 1, name: name, nation: '', region: '', description: name, specs: '', color: c[i], video: 'videos/doll' + (i + 1) + '.webm' };
-  //   });
-  // }
 
   /* ── Render ─────────────────────────────────── */
 
@@ -578,7 +615,7 @@
     if (doll.nation) {
       detailName.insertAdjacentHTML('beforebegin',
         '<div class="detail-nation">' + escapeHtml(doll.nation) + '</div>' +
-        '<div class="detail-region">' + escapeHtml(doll.region || '') + '</div>');
+        '<div class="detail-author">' + escapeHtml(doll.author || '') + '</div>');
     }
     detailName.textContent = doll.name;
     detailDesc.textContent = doll.description;
@@ -587,7 +624,7 @@
 
   function cleanDetailFields() {
     var n = detailInfo.querySelector('.detail-nation');
-    var r = detailInfo.querySelector('.detail-region');
+    var r = detailInfo.querySelector('.detail-author');
     if (n) n.remove();
     if (r) r.remove();
   }
