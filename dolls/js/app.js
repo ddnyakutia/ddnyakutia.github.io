@@ -615,7 +615,7 @@
     if (doll.nation) {
       detailName.insertAdjacentHTML('beforebegin',
         '<div class="detail-nation">' + escapeHtml(doll.nation) + '</div>' +
-        '<div class="detail-author">' + escapeHtml(doll.author || '') + '</div>');
+        '<div class="detail-author">Автор: ' + escapeHtml(doll.author || '') + '</div>');
     }
     detailName.textContent = doll.name;
     detailDesc.textContent = doll.description;
