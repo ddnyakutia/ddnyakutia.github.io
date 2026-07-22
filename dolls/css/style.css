@@ -74,7 +74,7 @@ html, body {
 }
 
 .preloader-text {
-  font-family: 'Playfair Display', serif;
+  font-family:"Noto Serif",serif;
   font-size: 15px;
   font-weight: 600;
   letter-spacing: 0.08em;
@@ -189,7 +189,7 @@ html, body {
 }
 
 .logo {
-  font-family: 'Playfair Display', serif;
+  font-family:"Noto Serif",serif;
   font-size: 24px;
   font-weight: 700;
   letter-spacing: 0.02em;
@@ -293,7 +293,7 @@ html, body {
   left: 20px;
   right: 20px;
   bottom: 16px;
-  font-family: 'Playfair Display', serif;
+  font-family:"Noto Serif",serif;
   font-size: 17px;
   font-weight: 600;
   letter-spacing: 0.01em;
@@ -564,7 +564,7 @@ html, body {
   opacity: 1;
 }
 
-.detail-region {
+.detail-author {
   font-size: 11px;
   font-weight: 300;
   letter-spacing: 0.1em;
@@ -575,13 +575,13 @@ html, body {
   transition: transform 0.55s var(--ease-out) 0.16s, opacity 0.55s var(--ease) 0.16s;
 }
 
-.detail-info.visible .detail-region {
+.detail-info.visible .detail-author {
   transform: translateX(0);
   opacity: 1;
 }
 
 .detail-name {
-  font-family: 'Playfair Display', serif;
+  font-family:"Noto Serif",serif;
   font-size: 46px;
   font-weight: 700;
   line-height: 1.1;
@@ -724,12 +724,12 @@ html, body {
     margin: 0 auto 18px;
   }
 
-  .detail-nation, .detail-region, .detail-name, .detail-desc, .detail-specs {
+  .detail-nation, .detail-author, .detail-name, .detail-desc, .detail-specs {
     transform: translateY(14px);
   }
 
   .detail-info.visible .detail-nation,
-  .detail-info.visible .detail-region,
+  .detail-info.visible .detail-author,
   .detail-info.visible .detail-name,
   .detail-info.visible .detail-desc,
   .detail-info.visible .detail-specs {
