@@ -34,7 +34,7 @@ html, body {
   overflow: hidden;
   background: var(--bg);
   color: var(--text);
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-family: Verdana, Geneva, sans-serif;
   -webkit-font-smoothing: antialiased;
 }
 
@@ -475,21 +475,6 @@ html, body {
 
 /* ── Detail Info Panel ───────────────────────── */
 /* Desktop: fixed right rail revealed with translateX + opacity (no width animation) */
-
-/*.detail-backdrop {
-  position: fixed;
-  inset: 0;
-  z-index: 150;
-  background: rgba(4, 3, 5, 0.72);
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.5s var(--ease);
-}
-
-.detail-backdrop.visible {
-  opacity: 1;
-  pointer-events: all;
-}*/
 
 .detail-info {
   position: fixed;
