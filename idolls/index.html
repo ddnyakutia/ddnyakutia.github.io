@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>iDolls | Интерактивные Куклы</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div class="preloader" id="preloader">
+    <div class="preloader-ring"></div>
+    <div class="preloader-text">Интерактивные Куклы</div>
+  </div>
+
+  <div class="bg-gradient"></div>
+  <div class="bg-pattern"></div>
+  <div class="bg-particles" id="particles"></div>
+  <div class="vignette"></div>
+
+  <header class="header" id="header">
+    <div class="header-logos">
+      <a href="https://ddnykt.ru/" target="_blank">
+        <img class="header-logo" src="img/logo.png" alt="" onerror="this.style.display='none'">
+      </a>
+    </div>
+    <h1 class="logo">Интерактивные Куклы</h1>
+    <p class="subtitle">народов России</p>
+  </header>
+
+  <main class="slider-container" id="sliderContainer">
+    <div class="track" id="track"></div>
+    <div class="spotlight" id="spotlight" aria-hidden="true"></div>
+  </main>
+
+  <div class="detail-backdrop" id="detailBackdrop"></div>
+
+  <div class="detail-info" id="detailInfo">
+    <div class="detail-sheet-handle"></div>
+    <h2 class="detail-name" id="detailName"></h2>
+    <div class="detail-divider"></div>
+    <p class="detail-desc" id="detailDesc"></p>
+    <p class="detail-specs" id="detailSpecs"></p>
+    <button class="detail-close" id="detailClose" aria-label="Закрыть">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+    </button>
+  </div>
+
+  <nav class="nav-arrows" id="navArrows">
+    <button class="nav-btn nav-prev" id="prevBtn" aria-label="Предыдущая">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 19l-7-7 7-7"/></svg>
+    </button>
+    <button class="nav-btn nav-next" id="nextBtn" aria-label="Следующая">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5l7 7-7 7"/></svg>
+    </button>
+  </nav>
+
+  <div class="dots" id="dots"></div>
+
+  <div class="rotate-hint" id="rotateHint">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 4v6h6"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
+    Нажмите или потяните для вращения
+  </div>
+
+  <script src="js/app.js"></script>
+</body>
+</html>
