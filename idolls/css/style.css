@@ -299,6 +299,7 @@ html, body {
   transform: translateY(8px);
   transition: opacity 0.4s var(--ease), transform 0.4s var(--ease);
   pointer-events: none;
+  overflow: visible;
 }
 
 .doll-card .card-name text {

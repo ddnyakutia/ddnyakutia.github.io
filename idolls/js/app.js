@@ -171,7 +171,7 @@
       var lineW = Math.max(maxLineLen * (fontSize * 0.65), 80);
       var lineH = fontSize + 2;
       var svgW = 300;
-      var svgH = lines.length * lineH + 10;
+      var svgH = lines.length * lineH + 30;
       var midX = svgW / 2;
       var defs = '';
       var tspans = '';
