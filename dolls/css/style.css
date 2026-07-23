@@ -337,6 +337,31 @@ html, body {
   display: none;
 }
 
+.card-loading {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 34px;
+  height: 34px;
+  margin: -17px 0 0 -17px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.18);
+  border-top-color: var(--accent);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s var(--ease);
+  animation: cardLoadingSpin 0.9s linear infinite;
+}
+
+.doll-card.card-active.buffering .card-loading,
+.doll-card.card-detail.buffering .card-loading {
+  opacity: 1;
+}
+
+@keyframes cardLoadingSpin {
+  to { transform: rotate(360deg); }
+}
+
 .doll-card.card-detail { cursor: ew-resize; }
 
 /* Thin progress track shown only on the open slide, so you can see  */
@@ -505,9 +530,8 @@ html, body {
 }
 
 .detail-close {
-  position: absolute;
-  top: 28px;
-  right: 32px;
+  align-self: center;
+  margin-top: 30px;
   width: 44px;
   height: 44px;
   border: 1px solid rgba(255,255,255,0.1);
@@ -586,7 +610,7 @@ html, body {
 }
 
 .detail-desc {
-  font-size: 16px;
+  font-size: 14px;
   font-weight: 300;
   line-height: 1.7;
   color: rgba(255,255,255,0.72);
@@ -694,10 +718,14 @@ html, body {
   }
 
   .detail-close {
-    top: 16px;
-    right: 16px;
-    width: 38px;
-    height: 38px;
+    width: 40px;
+    height: 40px;
+    margin-top: 22px;
+  }
+
+  .detail-close:hover,
+  .detail-close:active {
+    transform: rotate(90deg);
   }
 
   .detail-sheet-handle {

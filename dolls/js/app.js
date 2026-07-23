@@ -74,6 +74,7 @@
       var card = findCard(idx);
       var video = card && card.querySelector('.card-video');
       if (!video) return Promise.resolve();
+      video.dataset.warmed = '1';
       video.preload = 'auto';
       video.load();
       return waitForVideoReady(video);
@@ -146,10 +147,16 @@
         '<video class="card-video" src="' + doll.video + '" loop muted playsinline preload="metadata"></video>' +
         '<div class="card-sheen"></div>' +
         '<div class="video-scrub-bar"><div class="video-scrub-fill"></div></div>' +
+        '<div class="card-loading" aria-hidden="true"></div>' +
         '<div class="card-name">' + escapeHtml(doll.name) + '</div>';
 
       var video = card.querySelector('.card-video');
       video.addEventListener('error', function () { video.style.display = 'none'; });
+      // show a subtle spinner instead of a blank card while a slide's
+      // video is still buffering (mainly matters on slower mobile networks)
+      video.addEventListener('waiting', function () { card.classList.add('buffering'); });
+      video.addEventListener('playing', function () { card.classList.remove('buffering'); });
+      video.addEventListener('canplay', function () { card.classList.remove('buffering'); });
 
       bindVideoScrub(card, video, idx);
 
@@ -403,6 +410,7 @@
         card.style.opacity = '0.55';
         card.style.zIndex = '5';
         stopVideo(v);
+        warmIfNeeded(v);
       } else {
         var s2 = raw > 0 ? 1 : -1;
         var farStep = step * (1 + Math.min(abs, 4) * 0.35);
@@ -508,13 +516,31 @@
           newCard.style.transition = 'transform ' + DETAIL_MS + 'ms ' + EASE_OUT + ', opacity 0.4s ' + EASE_OUT + ', box-shadow ' + DETAIL_MS + 'ms ' + EASE_OUT;
           applyDetailTransform(newCard);
         } else {
+          // On mobile the card never zooms — it just needs to sit dead
+          // center like a normal "active" slide. Without this it stays
+          // wherever paint() last parked it (as a side/hidden card), so
+          // the text would update but the video itself was off in the
+          // wrong spot, effectively invisible.
           newCard.style.transition = 'opacity 0.4s ' + EASE_OUT;
+          newCard.style.transform = 'translate(-50%, -50%) translateX(0px) rotateY(0deg) scale(1)';
         }
         var newVideo = newCard.querySelector('.card-video');
         if (newVideo) {
+          if (newVideo.dataset.warmed !== '1') {
+            newVideo.dataset.warmed = '1';
+            newVideo.preload = 'auto';
+          }
           try { newVideo.currentTime = 0; } catch (e) {}
           playVideo(newVideo);
         }
+        // get the next likely swipe targets buffering in the background
+        // too, so repeated prev/next inside detail mode stays smooth
+        var nn = dolls.length;
+        [1, -1].forEach(function (d) {
+          var ni = ((newIdx + d) % nn + nn) % nn;
+          var nc = findCard(ni);
+          warmIfNeeded(nc && nc.querySelector('.card-video'));
+        });
         requestAnimationFrame(function () {
           newCard.style.opacity = '1';
         });
@@ -596,6 +622,18 @@
   function stopVideo(v) {
     if (!v) return;
     try { v.pause(); } catch (e) {}
+  }
+
+  // Give the video a head start on downloading real data (not just
+  // metadata) the moment it becomes one of the two immediate neighbors —
+  // by the time a swipe actually lands on it, it's likely already
+  // buffered instead of starting from zero. Only ever done once per
+  // element so it doesn't keep re-triggering on every paint().
+  function warmIfNeeded(v) {
+    if (!v || v.dataset.warmed === '1') return;
+    v.dataset.warmed = '1';
+    v.preload = 'auto';
+    v.load();
   }
 
   function getDeg() {
