@@ -633,7 +633,7 @@
     var targetCenterX = vw * 0.28;
     var shiftX = targetCenterX - vw / 2;
 
-    card.style.transform = 'translate(-50%, -45%) translateX(' + shiftX + 'px) rotateY(0deg) scale(' + scale + ')';
+    card.style.transform = 'translate(-50%, -25%) translateX(' + shiftX + 'px) rotateY(0deg) scale(' + scale + ')';
   }
 
   /* ── Detail: close ──────────────────────────── */
