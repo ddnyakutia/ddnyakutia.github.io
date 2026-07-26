@@ -53,6 +53,7 @@
       .catch(function () {})
       .then(function () {
         paint(false);
+        preloadAdjacent();
         hidePreloader();
       });
   }
@@ -98,6 +99,33 @@
     });
 
     return Promise.all(waits);
+  }
+
+  function preloadAdjacent() {
+    var n = dolls.length;
+    if (n < 2) return;
+    var offsets = [-2, -1, 1, 2];
+    offsets.forEach(function (off) {
+      var idx = ((cur + off) % n + n) % n;
+      var card = findCard(idx);
+      var img = card && card.querySelector('.card-img');
+      if (img && (!img.complete || !img.naturalWidth)) {
+        var d = dolls[idx];
+        var preImg = new Image();
+        preImg.src = framePath(d, 1);
+      }
+    });
+  }
+
+  var _framePreloadCache = {};
+  function preloadFrames(doll) {
+    var id = doll.id;
+    if (_framePreloadCache[id]) return;
+    _framePreloadCache[id] = true;
+    for (var f = 1; f <= TOTAL_FRAMES; f++) {
+      var p = new Image();
+      p.src = framePath(doll, f);
+    }
   }
 
   function hidePreloader() {
@@ -445,6 +473,7 @@
     cur = idx;
     busy = true;
     paint(true);
+    preloadAdjacent();
     setTimeout(function () { busy = false; }, NAV_MS);
   }
 
@@ -510,6 +539,7 @@
     mode = 'detail';
 
     var doll = dolls[cur];
+    preloadFrames(doll);
     var mobile = isMobile();
     var cards = track.querySelectorAll('.doll-card');
     var activeCard = null;
@@ -560,6 +590,8 @@
     busy = true;
     var mobile = isMobile();
     var oldCard = findCard(cur);
+
+    preloadFrames(dolls[newIdx]);
 
     detailInfo.classList.remove('visible');
 

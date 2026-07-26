@@ -708,7 +708,6 @@ html, body {
 
   .header { padding: 16px 20px; }
   .header-logos { gap: 14px; }
-  .header-logo { height: 24px; max-width: 84px; }
   .logo { font-size: 19px; }
   .subtitle { font-size: 10.5px; letter-spacing: 0.12em; }
 
