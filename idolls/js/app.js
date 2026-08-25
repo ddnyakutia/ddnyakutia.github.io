@@ -17,10 +17,13 @@
   var track = document.getElementById('track');
   var sliderContainer = document.getElementById('sliderContainer');
   var spotlight = document.getElementById('spotlight');
+  var hitPrev = document.getElementById('hitPrev');
+  var hitNext = document.getElementById('hitNext');
   var detailBackdrop = document.getElementById('detailBackdrop');
   var detailInfo = document.getElementById('detailInfo');
   var detailScroll = document.getElementById('detailScroll');
   var detailClose = document.getElementById('detailClose');
+  var detailShare = document.getElementById('detailShare');
   var detailName = document.getElementById('detailName');
   var detailDesc = document.getElementById('detailDesc');
   var detailSpecs = document.getElementById('detailSpecs');
@@ -29,25 +32,43 @@
   var header = document.getElementById('header');
   var navArrows = document.getElementById('navArrows');
   var dotsEl = document.getElementById('dots');
+  var slideCounter = document.getElementById('slideCounter');
+  var rotateHint = document.getElementById('rotateHint');
   var particles = document.getElementById('particles');
   var preloader = document.getElementById('preloader');
+  var preloaderFill = document.getElementById('preloaderFill');
+  var preloaderPercent = document.getElementById('preloaderPercent');
 
   var drag = null;
   var scrub = null;
   var scrubJustMoved = false;
   var mq = window.matchMedia(MOBILE_QUERY);
 
+  var panY = 0;
+  var PAN_WHEEL_SENSITIVITY = 0.6;
+  // How far (as a fraction of the card's height) the view can be scrolled
+  // down toward the doll's feet, or up past the default crop, in either
+  // direction from the default top-anchored framing.
+  var PAN_DOWN_FRACTION = 0.3;
+  var PAN_UP_FRACTION = 0.15;
+
+  var loadTotal = 1; // dolls.json fetch
+  var loadDone = 0;
+
   init();
 
   function init() {
     createParticles();
+    var hashIdx = -1;
     load()
       .then(function () {
+        bumpProgress();
         enrichDolls();
         render();
         buildDots();
         bind();
-        cur = 0;
+        hashIdx = getDollIndexFromHash();
+        cur = hashIdx >= 0 ? hashIdx : 0;
         return warmPriorityImages();
       })
       .catch(function () {})
@@ -58,7 +79,46 @@
         // so its frames need to be ready ahead of that drag too.
         if (isMobile() && dolls[cur]) preloadFrames(dolls[cur]);
         hidePreloader();
+        if (hashIdx >= 0) {
+          // A #doll=<id> link should land straight on that doll's detail view
+          setTimeout(openDetail, 700);
+        } else if (isMobile()) {
+          // On mobile, rotating happens right on the idle carousel — hint at
+          // it early since desktop only discovers it once detail is open
+          setTimeout(maybeShowRotateHint, 700);
+        }
       });
+  }
+
+  function bumpProgress() {
+    loadDone++;
+    updateProgress();
+  }
+
+  function updateProgress() {
+    var pct = loadTotal ? Math.min(100, Math.round(loadDone / loadTotal * 100)) : 0;
+    if (preloaderFill) preloaderFill.style.width = pct + '%';
+    if (preloaderPercent) preloaderPercent.textContent = pct + '%';
+  }
+
+  /* ── Rotate hint ────────────────────────────── */
+
+  var ROTATE_HINT_KEY = 'idolls-rotate-hint-seen';
+  var rotateHintTimer = null;
+
+  function maybeShowRotateHint() {
+    if (!rotateHint) return;
+    try { if (localStorage.getItem(ROTATE_HINT_KEY)) return; } catch (e) {}
+    rotateHint.classList.add('visible');
+    clearTimeout(rotateHintTimer);
+    rotateHintTimer = setTimeout(dismissRotateHint, 4500);
+  }
+
+  function dismissRotateHint() {
+    if (!rotateHint) return;
+    clearTimeout(rotateHintTimer);
+    rotateHint.classList.remove('visible');
+    try { localStorage.setItem(ROTATE_HINT_KEY, '1'); } catch (e) {}
   }
 
   function enrichDolls() {
@@ -81,19 +141,24 @@
     var idxs = [0];
     if (n > 1) idxs.push(1);
     if (n > 2) idxs.push(n - 1);
+    if (cur !== 0) idxs.push(cur);
     idxs = idxs.filter(function (v, i) { return idxs.indexOf(v) === i; });
+
+    loadTotal += idxs.length;
+    updateProgress();
 
     var waits = idxs.map(function (idx) {
       var card = findCard(idx);
       var img = card && card.querySelector('.card-img');
-      if (!img) return Promise.resolve();
+      if (!img) { bumpProgress(); return Promise.resolve(); }
       return new Promise(function (resolve) {
-        if (img.complete && img.naturalWidth) { resolve(); return; }
+        if (img.complete && img.naturalWidth) { bumpProgress(); resolve(); return; }
         var timer = setTimeout(finish, 8000);
         function finish() {
           img.removeEventListener('load', finish);
           img.removeEventListener('error', finish);
           clearTimeout(timer);
+          bumpProgress();
           resolve();
         }
         img.addEventListener('load', finish);
@@ -212,6 +277,61 @@
       .then(function (d) { dolls = d; })
   }
 
+  /* ── Shareable link (#doll=<id>) ────────────── */
+
+  function getDollIndexFromHash() {
+    var m = /doll=(\d+)/.exec(location.hash);
+    if (!m) return -1;
+    var id = parseInt(m[1], 10);
+    for (var i = 0; i < dolls.length; i++) {
+      if (dolls[i].id === id) return i;
+    }
+    return -1;
+  }
+
+  function updateUrlHash(doll) {
+    if (!doll) return;
+    var newHash = '#doll=' + doll.id;
+    if (location.hash !== newHash) history.replaceState(null, '', newHash);
+  }
+
+  function clearUrlHash() {
+    if (location.hash) history.replaceState(null, '', location.pathname + location.search);
+  }
+
+  function onShareClick(e) {
+    e.stopPropagation();
+    var doll = dolls[cur];
+    if (!doll) return;
+    var url = location.origin + location.pathname + location.search + '#doll=' + doll.id;
+    copyToClipboard(url, function () {
+      if (!detailShare) return;
+      detailShare.classList.remove('copied');
+      void detailShare.offsetWidth; // restart the CSS animation on repeat clicks
+      detailShare.classList.add('copied');
+      clearTimeout(detailShare._copiedTimer);
+      detailShare._copiedTimer = setTimeout(function () {
+        detailShare.classList.remove('copied');
+      }, 1800);
+    });
+  }
+
+  function copyToClipboard(text, done) {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(done, done);
+      return;
+    }
+    var ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed';
+    ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    try { document.execCommand('copy'); } catch (e) {}
+    document.body.removeChild(ta);
+    done();
+  }
+
   /* ── Render ─────────────────────────────────── */
 
   var CARD_NAME_FONT_SIZE = 14;
@@ -313,7 +433,10 @@
         img: img,
         idx: idx,
         startX: e.clientX,
+        startY: e.clientY,
         startFrame: parseInt(img.dataset.frame, 10) || 0,
+        startPan: panY,
+        axis: null,
         moved: false
       };
       try { card.setPointerCapture(e.pointerId); } catch (err) {}
@@ -322,10 +445,26 @@
     card.addEventListener('pointermove', function (e) {
       if (!scrub || scrub.pointerId !== e.pointerId) return;
       var dx = e.clientX - scrub.startX;
-      if (!scrub.moved && Math.abs(dx) > 4) {
+      var dy = e.clientY - scrub.startY;
+      // In detail mode a drag can either rotate the doll (horizontal) or
+      // pan the crop (vertical) — lock to whichever the gesture committed
+      // to first so it doesn't wobble between the two. Outside detail mode
+      // (mobile idle) only horizontal ever counted, and still does — a
+      // vertical wobble there shouldn't swallow what was meant as a tap.
+      if (!scrub.axis && mode === 'detail' && (Math.abs(dx) > 4 || Math.abs(dy) > 4)) {
+        scrub.axis = Math.abs(dy) > Math.abs(dx) ? 'y' : 'x';
         scrub.moved = true;
+        dismissRotateHint();
+      } else if (!scrub.axis && mode !== 'detail' && Math.abs(dx) > 4) {
+        scrub.axis = 'x';
+        scrub.moved = true;
+        dismissRotateHint();
       }
       if (!scrub.moved) return;
+      if (scrub.axis === 'y') {
+        setPan(scrub.card, scrub.startPan + dy);
+        return;
+      }
       var frameDelta = Math.round(dx * DRAG_SENSITIVITY);
       var newFrame = ((scrub.startFrame + frameDelta) % TOTAL_FRAMES + TOTAL_FRAMES) % TOTAL_FRAMES;
       setFrame(scrub.img, newFrame, scrub.idx);
@@ -342,6 +481,29 @@
       if (!scrub || scrub.pointerId !== e.pointerId) return;
       scrub = null;
     });
+  }
+
+  /* ── Detail: vertical pan ─────────────────────
+     Lets a viewer scroll/drag the zoomed detail image up to see more of
+     the doll below the default top-anchored crop, instead of us having to
+     guess a single framing that works for every doll's own photo. */
+
+  function setPan(card, value) {
+    if (!card) return;
+    var h = card.offsetHeight;
+    panY = Math.max(-h * PAN_DOWN_FRACTION, Math.min(h * PAN_UP_FRACTION, value));
+    card.style.setProperty('--pan-y', panY + 'px');
+  }
+
+  function panDetail(deltaY) {
+    var card = findCard(cur);
+    if (!card) return;
+    setPan(card, panY - deltaY * PAN_WHEEL_SENSITIVITY);
+  }
+
+  function resetPan(card) {
+    panY = 0;
+    if (card) card.style.setProperty('--pan-y', '0px');
   }
 
   function animateToFrame(img, targetFrame, dollIdx) {
@@ -425,6 +587,7 @@
   function updateDots() {
     var d = dotsEl.querySelectorAll('.dot');
     d.forEach(function (el, idx) { el.classList.toggle('active', idx === cur); });
+    if (slideCounter && dolls.length) slideCounter.textContent = (cur + 1) + ' / ' + dolls.length;
   }
 
   /* ── Events ─────────────────────────────────── */
@@ -432,8 +595,11 @@
   function bind() {
     prevBtn.addEventListener('click', function () { nav(-1); });
     nextBtn.addEventListener('click', function () { nav(1); });
+    hitPrev.addEventListener('click', function () { nav(-1); });
+    hitNext.addEventListener('click', function () { nav(1); });
     detailClose.addEventListener('click', closeDetail);
     detailBackdrop.addEventListener('click', closeDetail);
+    if (detailShare) detailShare.addEventListener('click', onShareClick);
 
     document.addEventListener('keydown', function (e) {
       if (e.key === 'Escape' && mode === 'detail') { closeDetail(); return; }
@@ -446,6 +612,11 @@
     var scrollBuf = 0;
     var scrollTimer;
     sliderContainer.addEventListener('wheel', function (e) {
+      if (mode === 'detail') {
+        e.preventDefault();
+        panDetail(e.deltaY);
+        return;
+      }
       if (mode !== 'idle') return;
       e.preventDefault();
       scrollBuf += e.deltaY;
@@ -580,11 +751,28 @@
 
     setAccent(cur);
     updateDots();
+    positionSideHitZones(step, n);
 
     if (animate) {
       busy = true;
       setTimeout(function () { busy = false; }, NAV_MS);
     }
+  }
+
+  // The visible side cards are 3D-tilted (rotateY), which — combined with
+  // perspective — makes their real (clickable) shape a trapezoid narrower
+  // than how the doll actually looks. These flat, untilted twins sit over
+  // the same slot so the whole doll is clickable, not just its outer half.
+  function positionSideHitZones(step, n) {
+    if (n < 2) {
+      hitPrev.style.pointerEvents = 'none';
+      hitNext.style.pointerEvents = 'none';
+      return;
+    }
+    hitPrev.style.transform = 'translate(-50%, -50%) translateX(' + (-step) + 'px)';
+    hitNext.style.transform = 'translate(-50%, -50%) translateX(' + step + 'px)';
+    hitPrev.style.pointerEvents = 'auto';
+    hitNext.style.pointerEvents = 'auto';
   }
 
   /* ── Detail: open ───────────────────────────── */
@@ -594,6 +782,7 @@
     mode = 'detail';
 
     var doll = dolls[cur];
+    updateUrlHash(doll);
     preloadFrames(doll);
     var mobile = isMobile();
     var cards = track.querySelectorAll('.doll-card');
@@ -608,9 +797,13 @@
       card.style.opacity = '0';
       card.style.pointerEvents = 'none';
     });
+    hitPrev.style.pointerEvents = 'none';
+    hitNext.style.pointerEvents = 'none';
 
     // Populate before measuring so the mobile layout sees the sheet's real height
     populateDetail(doll);
+
+    resetPan(activeCard);
 
     if (activeCard) {
       if (!mobile) {
@@ -629,7 +822,11 @@
     detailInfo.classList.add('visible');
     header.classList.add('hidden');
     dotsEl.classList.add('hidden');
-
+    if (slideCounter) slideCounter.classList.add('hidden');
+    // Desktop only allows rotating a doll once its detail view is open,
+    // so that's the right moment to point it out there (mobile sees this
+    // hint earlier, right on the idle carousel)
+    maybeShowRotateHint();
   }
 
   /* ── Detail: switch to adjacent slide ── */
@@ -663,12 +860,14 @@
 
       cur = newIdx;
       var doll = dolls[cur];
+      updateUrlHash(doll);
       var newCard = findCard(cur);
 
       // Populate before measuring so the mobile layout sees the sheet's real height
       populateDetail(doll);
 
       if (newCard) {
+        resetPan(newCard);
         newCard.style.pointerEvents = 'none';
         newCard.style.opacity = '0';
         newCard.style.zIndex = '250';
@@ -743,6 +942,9 @@
     var shiftY = centerY - vh / 2;
 
     card.style.transform = 'translate(-50%, -50%) translate(0px, ' + shiftY + 'px) rotateY(0deg) scale(' + scale + ')';
+    // Keep the arrows level with the doll's own center instead of the
+    // viewport's, so they sit beside it rather than over the sheet below
+    navArrows.style.top = centerY + 'px';
   }
 
   /* ── Detail: close ──────────────────────────── */
@@ -750,6 +952,7 @@
   function closeDetail() {
     if (mode !== 'detail') return;
     mode = 'idle';
+    clearUrlHash();
 
     var cards = track.querySelectorAll('.doll-card');
     var activeCard = null;
@@ -759,7 +962,9 @@
     detailInfo.classList.remove('visible');
     header.classList.remove('hidden');
     navArrows.classList.remove('hidden');
+    navArrows.style.top = '';
     dotsEl.classList.remove('hidden');
+    if (slideCounter) slideCounter.classList.remove('hidden');
 
     cards.forEach(function (card) {
       var dri = parseInt(card.dataset.realIndex, 10);
