@@ -3,13 +3,15 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>iDolls | Интерактивные Куклы</title>
-  <link rel="stylesheet" href="css/style.css">
+  <title>iDolls | Куклы народов Якутии</title>
+  <link rel="stylesheet" href="css/style.css?v=3">
 </head>
 <body>
   <div class="preloader" id="preloader">
     <div class="preloader-ring"></div>
-    <div class="preloader-text">Интерактивные Куклы</div>
+    <div class="preloader-progress"><div class="preloader-progress-fill" id="preloaderFill"></div></div>
+    <div class="preloader-text">Куклы народов Якутии</div>
+    <div class="preloader-percent" id="preloaderPercent">0%</div>
   </div>
 
   <div class="bg-gradient"></div>
@@ -20,17 +22,23 @@
   <header class="header" id="header">
     <div class="header-logos">
       <a href="https://ddnykt.ru/" target="_blank">
-        <img class="header-logo" src="img/logo.svg" alt="" onerror="this.style.display='none'">
+        <img class="header-logo" src="img/logo.svg" alt="Логотип ddnykt.ru" onerror="this.style.display='none'">
       </a>
     </div>
-    <h1 class="logo">Интерактивные Куклы</h1>
-    <p class="subtitle">народов России</p>
+    <h1 class="logo">Куклы народов Якутии</h1>
   </header>
 
   <main class="slider-container" id="sliderContainer">
     <div class="track" id="track"></div>
     <div class="spotlight" id="spotlight" aria-hidden="true"></div>
+    <div class="side-hit side-hit-prev" id="hitPrev" aria-hidden="true"></div>
+    <div class="side-hit side-hit-next" id="hitNext" aria-hidden="true"></div>
   </main>
+
+  <div class="rotate-hint" id="rotateHint" aria-hidden="true">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 11-3-6.7M21 3v6h-6"/></svg>
+    Потяните куклу, чтобы повернуть
+  </div>
 
   <div class="detail-backdrop" id="detailBackdrop"></div>
 
@@ -41,9 +49,14 @@
       <div class="detail-divider"></div>
       <p class="detail-desc" id="detailDesc"></p>
       <p class="detail-specs" id="detailSpecs"></p>
-      <button class="detail-close" id="detailClose" aria-label="Закрыть">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
-      </button>
+      <div class="detail-actions">
+        <button class="detail-action detail-share" id="detailShare" aria-label="Скопировать ссылку на куклу">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12v7a1 1 0 001 1h14a1 1 0 001-1v-7M16 6l-4-4-4 4M12 2v14"/></svg>
+        </button>
+        <button class="detail-action detail-close" id="detailClose" aria-label="Закрыть">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+        </button>
+      </div>
     </div>
   </div>
 
@@ -57,7 +70,8 @@
   </nav>
 
   <div class="dots" id="dots"></div>
+  <div class="slide-counter" id="slideCounter"></div>
 
-  <script src="js/app.js"></script>
+  <script src="js/app.js?v=4"></script>
 </body>
 </html>
